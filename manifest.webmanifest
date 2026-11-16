@@ -1,6 +1,6 @@
 {
-  "name": "List",
-  "short_name": "List",
+  "name": "Masterlists",
+  "short_name": "Masterlists",
   "description": "A simple, fast to-do list that works offline.",
   "start_url": ".",
   "scope": ".",
