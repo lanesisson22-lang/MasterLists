@@ -1,0 +1,13 @@
+{
+  "appId": "io.github.lanesisson22lang.list",
+  "appName": "List",
+  "webDir": "www",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "launchAutoHide": true,
+      "backgroundColor": "#4f46e5",
+      "showSpinner": false
+    }
+  }
+}

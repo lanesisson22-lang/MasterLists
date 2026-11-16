@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>List</title>
+  <meta name="description" content="A simple, fast to-do list that works offline.">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-label="Lists">
+      <div class="sidebar-head">
+        <h1 class="brand">List</h1>
+        <button class="icon-btn only-mobile" id="closeSidebar" aria-label="Close lists">✕</button>
+      </div>
+      <ul class="lists" id="lists"></ul>
+      <form class="new-list" id="newListForm">
+        <input id="newListInput" type="text" placeholder="New list…" maxlength="60" aria-label="New list name" autocomplete="off">
+        <button type="submit" class="icon-btn" aria-label="Add list">＋</button>
+      </form>
+    </aside>
+    <div class="scrim" id="scrim" hidden></div>
+
+    <main class="main">
+      <header class="main-head">
+        <button class="icon-btn only-mobile" id="openSidebar" aria-label="Show lists">☰</button>
+        <h2 id="listTitle" class="list-title" title="Double-click to rename"></h2>
+        <button class="icon-btn" id="shareList" aria-label="Share list" title="Share list">⇪</button>
+        <button class="icon-btn" id="renameList" aria-label="Rename list" title="Rename list">✎</button>
+        <button class="icon-btn danger" id="deleteList" aria-label="Delete list" title="Delete list">🗑</button>
+      </header>
+
+      <form class="add-task" id="addTaskForm">
+        <input id="taskInput" type="text" placeholder="Add a task and press Enter" maxlength="200" aria-label="New task" autocomplete="off" autofocus>
+        <button type="submit" class="primary">Add</button>
+      </form>
+
+      <nav class="filters" aria-label="Filter tasks">
+        <button data-filter="all" class="active">All</button>
+        <button data-filter="active">Active</button>
+        <button data-filter="done">Done</button>
+      </nav>
+
+      <ul class="tasks" id="tasks"></ul>
+      <p class="empty" id="empty" hidden></p>
+
+      <footer class="main-foot">
+        <span id="count"></span>
+        <button id="clearDone" class="link">Clear completed</button>
+      </footer>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+    <span id="toastMsg"></span>
+    <button id="toastUndo" class="link">Undo</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
