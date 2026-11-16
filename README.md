@@ -10,7 +10,8 @@ A simple, fast to-do list app for the web, Android and iOS. The app itself is pl
 - Add, complete, edit (double-click or ✎) and delete tasks
 - Drag the ⠿ handle to reorder tasks (works with mouse and touch)
 - Filter by All / Active / Done, and clear completed tasks
-- Undo for deletes, and sharing a list through the share sheet
+- **Import from Claude:** tap ⤓ and paste a list Claude (or anyone) wrote. Bullets, numbers, `- [ ]`/`- [x]` checkboxes, bold, links and strikethrough are cleaned up; a heading becomes the suggested list name; chatty intro and outro lines are skipped. You can add to the current list or a new one. On Android, the installed web app also appears in the Share menu, so you can share text from the Claude app straight into List.
+- Undo for deletes and imports, and sharing a list through the share sheet
 - Saves automatically in your browser (localStorage) and syncs across open tabs
 - Light and dark mode follow your system setting
 - Installable as an app on phone or desktop (PWA), and works offline

@@ -1,5 +1,5 @@
-// Cache-first service worker so the app works offline.
-const CACHE = "list-v2";
+// Service worker so the web app works offline.
+const CACHE = "list-v3";
 const ASSETS = ["./", "index.html", "styles.css", "app.js", "manifest.webmanifest", "icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
@@ -14,18 +14,18 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+// Network first, so updates show up right away; fall back to the cache when offline.
 self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET") return;
+  if (e.request.method !== "GET" || new URL(e.request.url).origin !== location.origin) return;
   e.respondWith(
-    caches.match(e.request).then((hit) =>
-      hit ||
-      fetch(e.request).then((res) => {
-        if (res.ok && new URL(e.request.url).origin === location.origin) {
+    fetch(e.request)
+      .then((res) => {
+        if (res.ok) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(e.request, copy));
         }
         return res;
       })
-    )
+      .catch(() => caches.match(e.request, { ignoreSearch: true }))
   );
 });

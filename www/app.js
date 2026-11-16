@@ -472,10 +472,187 @@
     return s.length > n ? s.slice(0, n - 1) + "…" : s;
   }
 
+  // ---------- Import (paste a list, e.g. one Claude wrote) ----------
+  const BULLET = /^(?:[-*+•▪◦‣–]|\d{1,3}[.)]|[a-zA-Z][.)])\s+/;
+  const CHECKBOX = /^\[( |x|X|✓|✔)?\]\s*/;
+  const DONE_MARK = /^[☑☒✅✔✓]\s*/;
+  const OPEN_MARK = /^[☐□○◯]\s*/;
+
+  function cleanInline(text) {
+    return text
+      .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1") // [text](url) -> text
+      .replace(/(\*\*|__)(.+?)\1/g, "$2") // **bold** / __bold__
+      .replace(/(^|[^*\w])\*(?!\s)([^*]+?)\*(?!\w)/g, "$1$2") // *italic*
+      .replace(/`([^`]*)`/g, "$1") // `code`
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  // Turns pasted text into { name, tasks: [{ text, done }] }.
+  function parseList(raw) {
+    const lines = String(raw || "").replace(/\r\n?/g, "\n").split("\n");
+    let inFence = false;
+    const rows = [];
+    for (const line of lines) {
+      const t = line.trim();
+      if (t.startsWith("```")) {
+        inFence = !inFence;
+        continue;
+      }
+      if (!t || /^([-*_=])\1{2,}$/.test(t) || /^\|?[\s:-]+\|[\s|:-]*$/.test(t)) continue; // blank, rules, table dividers
+      rows.push({ t, inFence });
+    }
+
+    const isItem = (t) => BULLET.test(t) || CHECKBOX.test(t) || DONE_MARK.test(t) || OPEN_MARK.test(t);
+    // If the text has a real list in it, ignore the prose around it ("Here's your list:", "Let me know…").
+    const listMode = rows.filter((r) => isItem(r.t)).length >= 2;
+
+    let name = "";
+    const tasks = [];
+    for (const { t, inFence } of rows) {
+      const heading = t.match(/^#{1,6}\s+(.*)$/);
+      const boldLine = t.match(/^(\*\*|__)([^*_]+)\1:?$/);
+      if (heading || (boldLine && !inFence)) {
+        if (!name) name = cleanInline((heading ? heading[1] : boldLine[2]).replace(/:$/, ""));
+        continue;
+      }
+
+      let text = t;
+      if (listMode && !isItem(text)) continue;
+      if (/^\|.*\|$/.test(text)) text = text.slice(1, -1).split("|").map((c) => c.trim()).filter(Boolean)[0] || ""; // first table cell
+
+      let done = false;
+      text = text.replace(/^>\s*/, "").replace(BULLET, "");
+      const box = text.match(CHECKBOX);
+      if (box) {
+        done = !!box[1] && box[1] !== " ";
+        text = text.slice(box[0].length);
+      } else if (DONE_MARK.test(text)) {
+        done = true;
+        text = text.replace(DONE_MARK, "");
+      } else {
+        text = text.replace(OPEN_MARK, "");
+      }
+      const strike = text.match(/^~~(.+)~~$/);
+      if (strike) {
+        done = true;
+        text = strike[1];
+      }
+      text = cleanInline(text.replace(/~~/g, "")).slice(0, 200);
+      if (text) tasks.push({ text, done });
+    }
+    return { name: name.slice(0, 60), tasks };
+  }
+
+  const $importDialog = $("importDialog");
+  const $importText = $("importText");
+  const $importPreview = $("importPreview");
+  const $importConfirm = $("importConfirm");
+  const $importListName = $("importListName");
+  let importNameTouched = false;
+
+  const importTarget = () => $("importForm").elements.target.value;
+
+  function updateImportPreview() {
+    const { name, tasks } = parseList($importText.value);
+    const shown = tasks.slice(0, 50).map((t) => {
+      const li = document.createElement("li");
+      li.textContent = t.text;
+      if (t.done) li.className = "done";
+      return li;
+    });
+    if (tasks.length > 50) {
+      const more = document.createElement("li");
+      more.className = "more";
+      more.textContent = `+ ${tasks.length - 50} more`;
+      shown.push(more);
+    }
+    $importPreview.replaceChildren(...shown);
+    $importConfirm.disabled = tasks.length === 0;
+    $importConfirm.textContent = tasks.length ? `Add ${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}` : "Add tasks";
+    if (!importNameTouched) $importListName.value = name;
+    $importListName.placeholder = name || "List name";
+  }
+
+  function openImport(prefill = "") {
+    $importText.value = prefill;
+    importNameTouched = false;
+    $("currentListLabel").textContent = `"${truncate(current().name, 24)}"`;
+    $("importForm").elements.target.value = "current";
+    $importListName.hidden = true;
+    updateImportPreview();
+    closeSidebar();
+    if (typeof $importDialog.showModal === "function") $importDialog.showModal();
+    else $importDialog.setAttribute("open", "");
+    $importText.focus();
+  }
+
+  function closeImport() {
+    if ($importDialog.open) $importDialog.close();
+  }
+
+  const canReadClipboard = !!(navigator.clipboard && navigator.clipboard.readText);
+  $("pasteBtn").hidden = !canReadClipboard;
+  $("pasteBtn").addEventListener("click", async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        $importText.value = text;
+        updateImportPreview();
+      }
+    } catch {
+      $importText.focus();
+      $importText.placeholder = "Couldn't read the clipboard. Long-press here and choose Paste.";
+    }
+  });
+
+  $("importBtn").addEventListener("click", () => openImport());
+  $("importCancel").addEventListener("click", closeImport);
+  $importText.addEventListener("input", updateImportPreview);
+  $importListName.addEventListener("input", () => (importNameTouched = true));
+  $("importForm").addEventListener("change", (e) => {
+    if (e.target.name !== "target") return;
+    $importListName.hidden = importTarget() !== "new";
+    if (!$importListName.hidden) $importListName.focus();
+  });
+
+  $("importForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const { name, tasks } = parseList($importText.value);
+    if (!tasks.length) return;
+    const now = Date.now();
+    const newTasks = tasks.map((t, i) => ({ id: uid(), text: t.text, done: t.done, created: now + i }));
+    const toNew = importTarget() === "new";
+    const listName = ($importListName.value.trim() || name || "Imported").slice(0, 60);
+    const n = newTasks.length;
+    withUndo(`Imported ${n} ${n === 1 ? "task" : "tasks"}${toNew ? ` into "${truncate(listName)}"` : ""}`, () => {
+      if (toNew) {
+        const id = uid();
+        state.lists.push({ id, name: listName, tasks: newTasks });
+        state.currentId = id;
+      } else {
+        current().tasks.unshift(...newTasks);
+      }
+      state.filter = "all";
+    });
+    haptic("MEDIUM");
+    closeImport();
+  });
+
+  // Text shared to the installed web app (Android "Share → List") arrives as URL parameters.
+  function handleSharedText() {
+    const params = new URLSearchParams(location.search);
+    const shared = ["title", "text", "url"].map((k) => params.get(k)).filter(Boolean).join("\n");
+    if (!shared) return;
+    history.replaceState(null, "", location.pathname);
+    openImport(shared);
+  }
+
   // Android back button: close the open drawer/editor first, otherwise leave the app.
   if (Native.App) {
     Native.App.addListener("backButton", () => {
-      if ($sidebar.classList.contains("open")) closeSidebar();
+      if ($importDialog.open) closeImport();
+      else if ($sidebar.classList.contains("open")) closeSidebar();
       else if (document.activeElement && document.activeElement.matches(".edit, .list-title-input")) document.activeElement.blur();
       else Native.App.exitApp();
     });
@@ -491,6 +668,7 @@
 
   render();
   loadNative();
+  handleSharedText();
 
   // Offline support for the web version. The native app already bundles its files,
   // and a service worker there would serve stale files after an app update.

@@ -30,6 +30,7 @@
       <header class="main-head">
         <button class="icon-btn only-mobile" id="openSidebar" aria-label="Show lists">☰</button>
         <h2 id="listTitle" class="list-title" title="Double-click to rename"></h2>
+        <button class="icon-btn" id="importBtn" aria-label="Import tasks" title="Import a list (paste from Claude)">⤓</button>
         <button class="icon-btn" id="shareList" aria-label="Share list" title="Share list">⇪</button>
         <button class="icon-btn" id="renameList" aria-label="Rename list" title="Rename list">✎</button>
         <button class="icon-btn danger" id="deleteList" aria-label="Delete list" title="Delete list">🗑</button>
@@ -55,6 +56,28 @@
       </footer>
     </main>
   </div>
+
+  <dialog class="sheet" id="importDialog" aria-labelledby="importTitle">
+    <form method="dialog" id="importForm">
+      <h3 id="importTitle">Import tasks</h3>
+      <p class="hint">Paste a list, for example one Claude wrote. Bullets, numbers and checkboxes are cleaned up, and each line becomes a task.</p>
+      <div class="paste-row">
+        <button type="button" class="link" id="pasteBtn">Paste from clipboard</button>
+      </div>
+      <textarea id="importText" rows="5" placeholder="- Buy milk&#10;- [ ] Call the dentist&#10;- [x] Book flights" aria-label="Text to import"></textarea>
+      <fieldset class="target">
+        <legend class="hint">Add to</legend>
+        <label><input type="radio" name="target" value="current" checked> <span id="currentListLabel">This list</span></label>
+        <label><input type="radio" name="target" value="new"> New list</label>
+        <input type="text" id="importListName" placeholder="List name" maxlength="60" aria-label="New list name" hidden>
+      </fieldset>
+      <ul class="preview" id="importPreview" aria-label="Preview"></ul>
+      <div class="sheet-actions">
+        <button type="button" class="link" id="importCancel">Cancel</button>
+        <button type="submit" class="primary" id="importConfirm" disabled>Add tasks</button>
+      </div>
+    </form>
+  </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden>
     <span id="toastMsg"></span>
