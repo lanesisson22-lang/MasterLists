@@ -127,7 +127,7 @@
   function renderTasks() {
     const list = current();
     $title.textContent = list.name;
-    document.title = `${list.name} · List`;
+    document.title = `${list.name} · Masterlists`;
 
     document.querySelectorAll(".filters button").forEach((b) => {
       b.classList.toggle("active", b.dataset.filter === state.filter);
@@ -604,7 +604,7 @@
     closeImport();
   });
 
-  // Text shared to the installed web app (Android "Share → List") arrives as URL parameters.
+  // Text shared to the installed web app (Android "Share → Masterlists") arrives as URL parameters.
   function handleSharedText() {
     const params = new URLSearchParams(location.search);
     const shared = ["title", "text", "url"].map((k) => params.get(k)).filter(Boolean).join("\n");

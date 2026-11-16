@@ -1,4 +1,4 @@
-# List
+# Masterlists
 
 A simple, fast to-do list web app. No build step, no dependencies, and it works offline.
 
@@ -8,7 +8,7 @@ A simple, fast to-do list web app. No build step, no dependencies, and it works 
 - Add, complete, edit (double-click or ✎) and delete tasks
 - Drag the ⠿ handle to reorder tasks (works with mouse and touch)
 - Filter by All / Active / Done, and clear completed tasks
-- **Import from Claude:** tap ⤓ and paste a list Claude (or anyone) wrote. Bullets, numbers, `- [ ]`/`- [x]` checkboxes, bold, links and strikethrough are cleaned up; a heading becomes the suggested list name; chatty intro and outro lines are skipped. You can add to the current list or a new one. When installed on Android, List also appears in the Share menu, so you can share text from the Claude app straight into it.
+- **Import from Claude:** tap ⤓ and paste a list Claude (or anyone) wrote. Bullets, numbers, `- [ ]`/`- [x]` checkboxes, bold, links and strikethrough are cleaned up; a heading becomes the suggested list name; chatty intro and outro lines are skipped. You can add to the current list or a new one. When installed on Android, Masterlists also appears in the Share menu, so you can share text from the Claude app straight into it.
 - Undo for deletes and imports, and sharing a list through the share sheet (or copying it to the clipboard)
 - Saves automatically in your browser (localStorage) and syncs across open tabs
 - Light and dark mode follow your system setting
@@ -27,7 +27,7 @@ Opening `index.html` directly also works, but offline support and installing nee
 
 ## Host it for free
 
-Turn on **GitHub Pages**: repo **Settings → Pages → Build and deployment → Deploy from a branch**, pick `main` and `/ (root)`, and save. GitHub gives you a link you can open on any device. On a phone, use the browser's **Add to Home Screen** to install it like an app.
+Turn on **GitHub Pages**: repo **Settings → Pages → Build and deployment → Deploy from a branch**, pick `main` and `/ (root)`, and save. The app is then at **https://lanesisson22-lang.github.io/Masterlists/** (once the repo is named `Masterlists`). GitHub gives you a link you can open on any device. On a phone, use the browser's **Add to Home Screen** to install it like an app.
 
 GitHub Pages on a free account requires the repo to be public.
 
