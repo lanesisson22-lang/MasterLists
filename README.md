@@ -8,6 +8,7 @@ A simple, fast to-do list web app. No build step, no dependencies, and it works 
 - Add, complete, edit (double-click) and delete tasks
 - Drag the ⠿ handle to reorder tasks (works with mouse and touch)
 - Filter by All / To do / Done (plus any priority tag in use), and clear completed tasks
+- **Set priority** link under every task (or tap an existing tag) to pick **Now**, **Next**, **Later**, **Big** or **None**, plus a **+ Note** link
 - **Per-task options (⋯ menu):** give any task a priority tag (**Now**, **Next**, **Later**, **Big**) or remove it; add, edit or remove a note; move it into or out of a section; edit or delete it
 - **Sections:** group a list into collapsible cards, each with an icon, its own progress bar and add box. Create one with **＋ Add section** or from a task's ⋯ menu, drag tasks between sections, and rename, reorder or remove sections from the section's ⋯ menu
 - **Import from Claude:** tap ⤓ and paste a list Claude (or anyone) wrote. Bullets, numbers, `- [ ]`/`- [x]` checkboxes, bold, links and strikethrough are cleaned up; the title heading becomes the suggested list name, other headings become sections, and `[Now]`-style tags and `Note:` lines are picked up; chatty intro and outro lines are skipped. You can add to the current list or a new one. When installed on Android, Masterlists also appears in the Share menu, so you can share text from the Claude app straight into it.
