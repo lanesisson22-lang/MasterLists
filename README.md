@@ -12,7 +12,8 @@ A simple, fast to-do list web app. No build step, no dependencies, and it works 
 - **Per-task options (⋯ menu):** give any task a priority tag (**Now**, **Next**, **Later**, **Big**) or remove it; add, edit or remove a note; move it into or out of a section; edit or delete it
 - **Sections:** group a list into collapsible cards, each with an icon, its own progress bar and add box. Create one with **＋ Add section** or from a task's ⋯ menu, drag tasks between sections, and rename, reorder or remove sections from the section's ⋯ menu
 - **Import from Claude:** tap ⤓ and paste a list Claude (or anyone) wrote. Bullets, numbers, `- [ ]`/`- [x]` checkboxes, bold, links and strikethrough are cleaned up; the title heading becomes the suggested list name, other headings become sections, and `[Now]`-style tags and `Note:` lines are picked up; chatty intro and outro lines are skipped. You can add to the current list or a new one. When installed on Android, Masterlists also appears in the Share menu, so you can share text from the Claude app straight into it.
-- Undo for deletes and imports, and sharing a list through the share sheet (or copying it to the clipboard)
+- **Share:** the orange **Share** button makes a link to the list. Whoever opens it sees a preview and can add their own copy, with sections, priorities and notes, to their Masterlists. You can leave out checked-off progress to share it as a fresh template, or copy the list as plain text instead. The list lives inside the link (after `#share=`), so nothing is uploaded and no account is needed; copies don't stay in sync.
+- Undo for deletes, imports and added shared lists
 - Saves automatically in your browser (localStorage) and syncs across open tabs
 - Light and dark mode follow your system setting
 - Installable to a phone home screen or desktop (PWA), and works offline

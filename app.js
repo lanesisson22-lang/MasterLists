@@ -931,20 +931,195 @@
     return parts.join("\n\n");
   }
 
-  $("shareList").addEventListener("click", async () => {
-    const list = current();
-    const text = listToText(list);
+  // ---------- Share link ----------
+  // The whole list is packed into the link's #fragment, which browsers never send to the server.
+  const SHARE_PREFIX = "#share=";
+
+  function toB64url(bytes) {
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function fromB64url(str) {
+    const bin = atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  const canCompress = typeof CompressionStream === "function" && typeof DecompressionStream === "function";
+
+  async function pipeBytes(bytes, stream) {
+    return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+  }
+
+  async function encodeList(list, withProgress) {
+    const secIndex = new Map(list.sections.map((s, i) => [s.id, i]));
+    const data = {
+      v: 1,
+      n: list.name,
+      s: list.sections.map((s) => [s.name, s.icon]),
+      t: list.tasks.map((t) => {
+        const o = { x: t.text };
+        if (withProgress && t.done) o.d = 1;
+        if (t.priority) o.p = t.priority;
+        if (t.note && t.note.trim()) o.m = t.note.trim();
+        if (secIndex.has(t.sectionId)) o.s = secIndex.get(t.sectionId);
+        return o;
+      }),
+    };
+    const bytes = new TextEncoder().encode(JSON.stringify(data));
+    if (canCompress) return "z" + toB64url(await pipeBytes(bytes, new CompressionStream("deflate-raw")));
+    return "j" + toB64url(bytes);
+  }
+
+  // Returns a clean list object, or throws if the link is broken.
+  async function decodeList(code) {
+    const kind = code[0];
+    let bytes = fromB64url(code.slice(1));
+    if (kind === "z") {
+      if (!canCompress) throw new Error("This browser is too old to open share links. Try updating it.");
+      bytes = await pipeBytes(bytes, new DecompressionStream("deflate-raw"));
+    } else if (kind !== "j") throw new Error("bad link");
+    const data = JSON.parse(new TextDecoder().decode(bytes));
+    if (!data || data.v !== 1 || !Array.isArray(data.t)) throw new Error("bad link");
+    const str = (v, max) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+    const sections = (Array.isArray(data.s) ? data.s : []).slice(0, 100).map(([name, icon]) => ({
+      id: uid(),
+      name: str(name, 60) || "Section",
+      icon: ICONS[icon] ? icon : "list",
+      collapsed: false,
+    }));
+    const now = Date.now();
+    const tasks = data.t
+      .slice(0, 2000)
+      .map((o, i) => {
+        const text = str(o && o.x, 200);
+        if (!text) return null;
+        const t = { id: uid(), text, done: o.d === 1, created: now + i };
+        if (TAGS[o.p]) t.priority = o.p;
+        const note = str(o.m, 1000);
+        if (note) t.note = note;
+        if (Number.isInteger(o.s) && sections[o.s]) t.sectionId = sections[o.s].id;
+        return t;
+      })
+      .filter(Boolean);
+    return { id: uid(), name: str(data.n, 60) || "Shared list", tasks, sections };
+  }
+
+  const shareUrlFor = (code) => location.origin + location.pathname + SHARE_PREFIX + code;
+  const $shareDialog = $("shareDialog");
+  const $shareUrl = $("shareUrl");
+
+  async function refreshShareLink() {
+    $shareUrl.value = shareUrlFor(await encodeList(current(), $("shareProgress").checked));
+  }
+
+  async function copy(text, done) {
     try {
-      if (navigator.share) {
-        await navigator.share({ title: list.name, text });
-      } else {
-        await navigator.clipboard.writeText(text);
-        showToast("List copied to clipboard", false);
-      }
+      await navigator.clipboard.writeText(text);
     } catch {
-      /* user cancelled the share sheet */
+      $shareUrl.select();
+      document.execCommand("copy");
+    }
+    showToast(done, false);
+  }
+
+  $("shareNative").hidden = !navigator.share;
+
+  $("shareList").addEventListener("click", async () => {
+    closeMenu();
+    $("shareName").textContent = current().name;
+    await refreshShareLink();
+    if (typeof $shareDialog.showModal === "function") $shareDialog.showModal();
+    else $shareDialog.setAttribute("open", "");
+    $("copyLink").focus();
+  });
+  $("shareProgress").addEventListener("change", refreshShareLink);
+  $shareUrl.addEventListener("focus", () => $shareUrl.select());
+  $("copyLink").addEventListener("click", () => copy($shareUrl.value, "Link copied. Paste it anywhere to share."));
+  $("copyText").addEventListener("click", () => copy(listToText(current()), "List copied as text"));
+  $("shareNative").addEventListener("click", async () => {
+    const list = current();
+    try {
+      await navigator.share({ title: list.name, text: `${list.name} (open in Masterlists)`, url: $shareUrl.value });
+    } catch {
+      /* cancelled */
     }
   });
+
+  // ---------- Opening a share link ----------
+  const $receiveDialog = $("receiveDialog");
+  let received = null;
+
+  async function openShared(code) {
+    try {
+      received = await decodeList(code);
+    } catch (err) {
+      received = null;
+      showToast(/too old/.test(err.message) ? err.message : "That share link looks incomplete. Ask for it to be sent again.", false);
+      return;
+    }
+    const n = received.tasks.length;
+    const done = received.tasks.filter((t) => t.done).length;
+    $("receiveName").textContent = received.name;
+    const bits = [`${n} ${n === 1 ? "task" : "tasks"}`];
+    if (received.sections.length) bits.push(`${received.sections.length} ${received.sections.length === 1 ? "section" : "sections"}`);
+    if (done) bits.push(`${done} checked off`);
+    $("receiveSummary").textContent = bits.join(" · ") + ". It will be added as a new list; your other lists aren't touched.";
+    const rows = [];
+    const secName = new Map(received.sections.map((s) => [s.id, s.name]));
+    const ordered = [
+      ...received.tasks.filter((t) => !t.sectionId),
+      ...received.sections.flatMap((s) => received.tasks.filter((t) => t.sectionId === s.id)),
+    ];
+    let lastSec;
+    for (const t of ordered.slice(0, 60)) {
+      if (t.sectionId && t.sectionId !== lastSec) rows.push(el("li", "sec-row", secName.get(t.sectionId)));
+      lastSec = t.sectionId;
+      const li = el("li", t.done ? "done" : "");
+      if (t.priority) li.append(tagEl(t.priority), document.createTextNode(" "));
+      li.append(document.createTextNode(t.text));
+      if (t.note) li.append(el("small", "note-prev", t.note));
+      rows.push(li);
+    }
+    if (ordered.length > 60) rows.push(el("li", "more", `+ ${ordered.length - 60} more`));
+    $("receivePreview").replaceChildren(...rows);
+    closeSidebar();
+    if (typeof $receiveDialog.showModal === "function") $receiveDialog.showModal();
+    else $receiveDialog.setAttribute("open", "");
+    $("receiveForm").querySelector('button[type="submit"]').focus();
+  }
+
+  $("receiveCancel").addEventListener("click", () => $receiveDialog.close());
+  $("receiveForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!received) return $receiveDialog.close();
+    const list = received;
+    received = null;
+    const names = new Set(state.lists.map((l) => l.name));
+    if (names.has(list.name)) {
+      let i = 2;
+      while (names.has(`${list.name} (${i})`)) i++;
+      list.name = `${list.name} (${i})`;
+    }
+    $receiveDialog.close();
+    withUndo(`Added "${truncate(list.name)}" to your lists`, () => {
+      state.lists.push(list);
+      state.currentId = list.id;
+      state.filter = "all";
+    });
+  });
+
+  function checkShareHash() {
+    if (!location.hash.startsWith(SHARE_PREFIX)) return false;
+    const code = location.hash.slice(SHARE_PREFIX.length);
+    history.replaceState(null, "", location.pathname + location.search);
+    openShared(code);
+    return true;
+  }
+  window.addEventListener("hashchange", checkShareHash);
 
   $("deleteList").addEventListener("click", () => {
     const list = current();
@@ -1122,6 +1297,12 @@
     }
     if (tasks.length > 60) shown.push(el("li", "more", `+ ${tasks.length - 60} more`));
     $importPreview.replaceChildren(...shown);
+    if (/^\S*#share=[A-Za-z0-9_-]+\s*$/.test($importText.value.trim())) {
+      $importPreview.replaceChildren(el("li", "more", "This is a Masterlists share link. Tap Open to see the list."));
+      $importConfirm.disabled = false;
+      $importConfirm.textContent = "Open";
+      return;
+    }
     $importConfirm.disabled = tasks.length === 0;
     $importConfirm.textContent = tasks.length ? `Add ${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}` : "Add tasks";
     if (!importNameTouched) $importListName.value = name;
@@ -1172,6 +1353,11 @@
 
   $("importForm").addEventListener("submit", (e) => {
     e.preventDefault();
+    const link = $importText.value.trim().match(/^\S*#share=([A-Za-z0-9_-]+)\s*$/);
+    if (link) {
+      closeImport();
+      return openShared(link[1]);
+    }
     const { name, tasks } = parseList($importText.value);
     if (!tasks.length) return;
     const toNew = importTarget() === "new";
@@ -1214,11 +1400,13 @@
     const shared = ["title", "text", "url"].map((k) => params.get(k)).filter(Boolean).join("\n");
     if (!shared) return;
     history.replaceState(null, "", location.pathname);
-    openImport(shared);
+    const link = shared.match(/#share=([A-Za-z0-9_-]+)/);
+    if (link) openShared(link[1]);
+    else openImport(shared);
   }
 
   render();
-  handleSharedText();
+  if (!checkShareHash()) handleSharedText();
 
   // Offline support
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
