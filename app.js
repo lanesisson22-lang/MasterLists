@@ -198,8 +198,8 @@
     );
   }
 
-  function tagEl(t) {
-    return el("span", `tag t-${t}`, TAGS[t].label);
+  function tagEl(t, tagName = "span") {
+    return el(tagName, `tag t-${t}`, TAGS[t].label);
   }
 
   function renderBoard() {
@@ -307,7 +307,15 @@
 
     const body = el("div", "body");
     const line = el("div", "line");
-    if (task.priority && TAGS[task.priority]) line.append(tagEl(task.priority), document.createTextNode(" "));
+    if (task.priority && TAGS[task.priority]) {
+      const tagBtn = tagEl(task.priority, "button");
+      tagBtn.classList.add("tag-btn");
+      tagBtn.type = "button";
+      tagBtn.title = "Change priority";
+      tagBtn.setAttribute("aria-label", `Priority: ${TAGS[task.priority].label}. Change priority`);
+      tagBtn.setAttribute("aria-haspopup", "menu");
+      line.append(tagBtn, document.createTextNode(" "));
+    }
     const text = el("span", "text", task.text);
     text.title = "Double-click to edit";
     line.append(text);
@@ -323,6 +331,23 @@
       body.append(note);
       requestAnimationFrame(() => autoGrow(note));
     }
+
+    // Quick actions under the text, always visible (also on phones).
+    const actions = el("div", "actions");
+    if (!task.priority) {
+      const setPri = el("button", "act pri-btn", "Set priority");
+      setPri.type = "button";
+      setPri.setAttribute("aria-haspopup", "menu");
+      setPri.setAttribute("aria-label", `Set priority for "${task.text}"`);
+      actions.append(setPri);
+    }
+    if (typeof task.note !== "string") {
+      const addNote = el("button", "act note-btn", "+ Note");
+      addNote.type = "button";
+      addNote.setAttribute("aria-label", `Add a note to "${task.text}"`);
+      actions.append(addNote);
+    }
+    if (actions.childElementCount) body.append(actions);
 
     const more = el("button", "icon-btn more-btn", "⋯");
     more.type = "button";
@@ -364,6 +389,7 @@
   function closeMenu() {
     if ($menu.hidden) return;
     $menu.hidden = true;
+    $menu.classList.remove("compact");
     if (menuFor) {
       menuFor.removeAttribute("aria-expanded");
       if (document.activeElement && $menu.contains(document.activeElement)) menuFor.focus({ preventScroll: true });
@@ -393,7 +419,7 @@
   function openTaskMenu(btn, task) {
     const list = current();
     openMenu(btn, (m) => {
-      m.append(menuLabel("Priority"));
+      m.append(menuLabel("Set priority"));
       const pri = el("div", "menu-chips");
       for (const t of TAG_IDS) {
         pri.append(
@@ -468,6 +494,29 @@
           });
         }, "danger")
       );
+    });
+  }
+
+  function openPriorityMenu(btn, task) {
+    openMenu(btn, (m) => {
+      m.classList.add("compact"); // narrow menu; set before it is measured and positioned
+      m.append(menuLabel("Set priority"));
+      const pri = el("div", "menu-chips");
+      for (const t of TAG_IDS) {
+        const chip = menuChip(TAGS[t].label, task.priority === t, () => {
+          task.priority = t;
+          commit();
+        }, "c-" + t);
+        chip.title = TAGS[t].hint;
+        pri.append(chip);
+      }
+      pri.append(
+        menuChip("None", !task.priority, () => {
+          delete task.priority;
+          commit();
+        })
+      );
+      m.append(pri);
     });
   }
 
@@ -757,6 +806,18 @@
   });
 
   $board.addEventListener("click", (e) => {
+    const pri = e.target.closest(".pri-btn, .tag-btn");
+    if (pri) {
+      if (menuFor === pri) return closeMenu();
+      return openPriorityMenu(pri, findTask(pri.closest(".task").dataset.id));
+    }
+    const noteBtn = e.target.closest(".note-btn");
+    if (noteBtn) {
+      const task = findTask(noteBtn.closest(".task").dataset.id);
+      task.note = "";
+      commit();
+      return focusNote(task.id);
+    }
     const more = e.target.closest(".more-btn");
     if (more) {
       if (menuFor === more) return closeMenu();
