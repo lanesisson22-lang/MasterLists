@@ -109,9 +109,15 @@
         name.textContent = list.name;
         const badge = document.createElement("span");
         badge.className = "badge";
-        const left = list.tasks.filter((t) => !t.done).length;
-        badge.textContent = left || "";
-        btn.append(name, badge);
+        const total = list.tasks.length;
+        const done = list.tasks.filter((t) => t.done).length;
+        badge.textContent = total ? `${done}/${total}` : "";
+        const mini = document.createElement("span");
+        mini.className = "mini";
+        const fill = document.createElement("i");
+        fill.style.width = total ? `${(done / total) * 100}%` : "0";
+        mini.append(fill);
+        btn.append(name, badge, mini);
         li.append(btn);
         return li;
       })
@@ -138,7 +144,11 @@
 
     const left = list.tasks.filter((t) => !t.done).length;
     const done = list.tasks.length - left;
-    $count.textContent = `${left} ${left === 1 ? "task" : "tasks"} left`;
+    const total = list.tasks.length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    $count.textContent = `${done} of ${total} done`;
+    $("ovNum").textContent = `${pct}%`;
+    $("ovBar").style.width = `${pct}%`;
     $clearDone.disabled = done === 0;
 
     if (tasks.length === 0) {
