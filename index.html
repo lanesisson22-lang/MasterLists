@@ -38,9 +38,9 @@
           <h2 id="listTitle" class="list-title" title="Double-click to rename"></h2>
         </div>
         <button class="icon-btn" id="importBtn" aria-label="Import tasks" title="Import a list (paste from Claude)">⤓</button>
-        <button class="icon-btn" id="shareList" aria-label="Share list" title="Share list">⇪</button>
         <button class="icon-btn" id="renameList" aria-label="Rename list" title="Rename list">✎</button>
         <button class="icon-btn danger" id="deleteList" aria-label="Delete list" title="Delete list">🗑</button>
+        <button class="share-btn" id="shareList" title="Share this list"><span aria-hidden="true">⇪</span> Share</button>
       </header>
 
       <div class="overall">
@@ -105,6 +105,38 @@
       <div class="sheet-actions">
         <button type="button" class="link" id="sectionCancel">Cancel</button>
         <button type="submit" class="primary" id="sectionSave">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="sheet small" id="shareDialog" aria-labelledby="shareTitle">
+    <form method="dialog">
+      <h3 id="shareTitle">Share list</h3>
+      <p class="hint">Anyone who opens this link gets their own copy of <strong id="shareName"></strong>, including sections, priorities and notes. Changes after that aren't synced.</p>
+      <div class="share-link">
+        <input id="shareUrl" class="field" readonly aria-label="Share link">
+        <button type="button" class="primary" id="copyLink">Copy link</button>
+      </div>
+      <label class="check-row"><input type="checkbox" id="shareProgress" checked> Include what's checked off</label>
+      <div class="share-row">
+        <button type="button" class="ghost" id="shareNative" hidden>Share via…</button>
+        <button type="button" class="ghost" id="copyText">Copy as text</button>
+      </div>
+      <div class="sheet-actions">
+        <button type="submit" class="primary">Done</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="sheet small" id="receiveDialog" aria-labelledby="receiveName">
+    <form method="dialog" id="receiveForm">
+      <div class="eyebrow">Shared with you</div>
+      <h3 id="receiveName"></h3>
+      <p class="hint" id="receiveSummary"></p>
+      <ul class="preview" id="receivePreview" aria-label="Preview"></ul>
+      <div class="sheet-actions">
+        <button type="button" class="link" id="receiveCancel">Not now</button>
+        <button type="submit" class="primary">Add to my lists</button>
       </div>
     </form>
   </dialog>

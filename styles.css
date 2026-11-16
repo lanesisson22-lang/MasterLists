@@ -664,6 +664,43 @@ button.tag-btn:hover, button.tag-btn[aria-expanded="true"] { box-shadow: 0 0 0 2
   border-top: 1px solid var(--border);
 }
 
+/* ---------- Share ---------- */
+.share-btn {
+  flex: none;
+  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 99px;
+  padding: 7px 14px;
+  background: var(--accent);
+  color: #fff;
+  font: 600 13px var(--body);
+}
+
+.share-btn:hover { filter: brightness(1.08); }
+
+@media (prefers-color-scheme: dark) {
+  .share-btn { color: #171614; }
+}
+
+.share-link { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+
+.share-link .field { margin: 0; flex: 1; min-width: 0; font-size: 13px; color: var(--muted); text-overflow: ellipsis; }
+
+.check-row { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; font-size: 14px; }
+
+.check-row input { width: 18px; height: 18px; margin: 0; }
+
+.share-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+.share-row .ghost[hidden] { display: none; }
+
+#receiveDialog .eyebrow { margin-bottom: 2px; }
+
+#receiveDialog h3 { font-size: 22px; }
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed;
@@ -715,7 +752,9 @@ button.tag-btn:hover, button.tag-btn[aria-expanded="true"] { box-shadow: 0 0 0 2
 
   .list-title { font-size: 22px; }
 
-  .main-head .icon-btn { width: 32px; }
+  .main-head .icon-btn { width: 30px; }
+
+  .share-btn { padding: 7px 11px; }
 
   .task .icon-btn { opacity: 1; }
 }
