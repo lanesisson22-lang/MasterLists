@@ -49,23 +49,24 @@
           <span class="ov-txt" id="count"></span>
         </div>
         <div class="bar"><i id="ovBar"></i></div>
-        <nav class="filters" aria-label="Filter tasks">
-          <button data-filter="all" class="active">All</button>
-          <button data-filter="active">To do</button>
-          <button data-filter="done">Done</button>
-        </nav>
+        <nav class="filters" id="filters" aria-label="Filter tasks"></nav>
       </div>
+      <div class="legend" id="legend" hidden></div>
 
-      <section class="card">
+      <div id="board">
+      <section class="card loose">
         <form class="add-task" id="addTaskForm">
           <input id="taskInput" type="text" placeholder="Add a task…" maxlength="200" aria-label="New task" autocomplete="off" autofocus>
           <button type="submit" class="primary">Add</button>
         </form>
-        <ul class="tasks" id="tasks"></ul>
+        <ul class="tasks" id="tasks" data-section=""></ul>
         <p class="empty" id="empty" hidden></p>
       </section>
+      <div id="sections"></div>
+      </div>
 
       <footer class="main-foot">
+        <button id="addSection" class="ghost">＋ Add section</button>
         <button id="clearDone" class="ghost">Clear completed</button>
       </footer>
     </main>
@@ -89,6 +90,21 @@
       <div class="sheet-actions">
         <button type="button" class="link" id="importCancel">Cancel</button>
         <button type="submit" class="primary" id="importConfirm" disabled>Add tasks</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="menu" id="menu" role="menu" hidden></div>
+
+  <dialog class="sheet small" id="sectionDialog" aria-labelledby="sectionTitle">
+    <form method="dialog" id="sectionForm">
+      <h3 id="sectionTitle">New section</h3>
+      <input type="text" id="sectionName" class="field" placeholder="Section name" maxlength="60" aria-label="Section name" autocomplete="off" required>
+      <p class="hint">Icon</p>
+      <div class="icon-grid" id="iconGrid" role="radiogroup" aria-label="Section icon"></div>
+      <div class="sheet-actions">
+        <button type="button" class="link" id="sectionCancel">Cancel</button>
+        <button type="submit" class="primary" id="sectionSave">Save</button>
       </div>
     </form>
   </dialog>
