@@ -1,9 +1,9 @@
 :root {
-  /* Safe areas: Capacitor's Android shell sets --safe-area-inset-*; browsers and iOS use env() */
-  --sat: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
-  --sab: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
-  --sal: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
-  --sar: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  /* Safe areas (notches, home indicator) when installed to a phone's home screen */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
   --bg: #f6f7fb;
   --panel: #ffffff;
   --sidebar: #eef0f7;
@@ -369,11 +369,6 @@ button { cursor: pointer; }
 .toast .link { color: var(--accent-soft); font-weight: 600; }
 
 .toast .link[hidden] { display: none; }
-
-/* Feel more like a native app: no text-selection callouts or rubber-band on chrome */
-.native body { -webkit-user-select: none; user-select: none; overscroll-behavior: none; }
-
-.native input, .native .task .text { -webkit-user-select: text; user-select: text; }
 
 .toast[hidden], .scrim[hidden], .empty[hidden] { display: none; }
 

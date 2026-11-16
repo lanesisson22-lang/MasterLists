@@ -3,18 +3,6 @@
 
   const STORAGE_KEY = "list-app:v1";
 
-  // ---------- Native bridge (Capacitor) ----------
-  // In the iOS/Android app, Capacitor injects window.Capacitor with the native plugins.
-  // In a normal browser these are absent and every native call becomes a no-op.
-  const Cap = window.Capacitor;
-  const isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
-  const Native = isNative ? Cap.Plugins : {};
-  if (isNative) document.documentElement.classList.add("native");
-
-  const haptic = (style = "LIGHT") => {
-    if (Native.Haptics) Native.Haptics.impact({ style }).catch(() => {});
-  };
-
   // ---------- State ----------
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
@@ -54,24 +42,6 @@
       localStorage.setItem(STORAGE_KEY, raw);
     } catch {
       /* storage unavailable (private mode etc.) — app still works in memory */
-    }
-    // On iOS/Android, also save to native storage, which the OS won't evict like WebView storage.
-    if (Native.Preferences) Native.Preferences.set({ key: STORAGE_KEY, value: raw }).catch(() => {});
-  }
-
-  // Native storage is the source of truth in the app; fall back to (and migrate) localStorage.
-  async function loadNative() {
-    if (!Native.Preferences) return;
-    try {
-      const { value } = await Native.Preferences.get({ key: STORAGE_KEY });
-      if (value) {
-        state = load(value);
-        render();
-      } else {
-        save();
-      }
-    } catch {
-      /* keep the localStorage copy */
     }
   }
 
@@ -320,7 +290,6 @@
       let to = tasks.findIndex((t) => t.id === overId);
       if (!before) to += 1;
       tasks.splice(to, 0, moved);
-      haptic();
     }
     commit();
   };
@@ -343,7 +312,6 @@
     const id = e.target.closest(".task").dataset.id;
     const task = current().tasks.find((t) => t.id === id);
     task.done = e.target.checked;
-    if (task.done) haptic("MEDIUM");
     commit();
   });
 
@@ -412,9 +380,7 @@
     const lines = list.tasks.map((t) => `${t.done ? "☑" : "☐"} ${t.text}`);
     const text = `${list.name}\n\n${lines.join("\n") || "(empty)"}`;
     try {
-      if (Native.Share) {
-        await Native.Share.share({ title: list.name, text, dialogTitle: "Share list" });
-      } else if (navigator.share) {
+      if (navigator.share) {
         await navigator.share({ title: list.name, text });
       } else {
         await navigator.clipboard.writeText(text);
@@ -635,7 +601,6 @@
       }
       state.filter = "all";
     });
-    haptic("MEDIUM");
     closeImport();
   });
 
@@ -648,31 +613,11 @@
     openImport(shared);
   }
 
-  // Android back button: close the open drawer/editor first, otherwise leave the app.
-  if (Native.App) {
-    Native.App.addListener("backButton", () => {
-      if ($importDialog.open) closeImport();
-      else if ($sidebar.classList.contains("open")) closeSidebar();
-      else if (document.activeElement && document.activeElement.matches(".edit, .list-title-input")) document.activeElement.blur();
-      else Native.App.exitApp();
-    });
-  }
-
-  // Status bar icons: dark on light theme, light on dark theme.
-  if (Native.StatusBar) {
-    const dark = window.matchMedia("(prefers-color-scheme: dark)");
-    const applyBar = () => Native.StatusBar.setStyle({ style: dark.matches ? "DARK" : "LIGHT" }).catch(() => {});
-    applyBar();
-    dark.addEventListener("change", applyBar);
-  }
-
   render();
-  loadNative();
   handleSharedText();
 
-  // Offline support for the web version. The native app already bundles its files,
-  // and a service worker there would serve stale files after an app update.
-  if (!isNative && "serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  // Offline support
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
 })();

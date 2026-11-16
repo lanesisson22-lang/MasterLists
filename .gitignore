@@ -1,5 +1,1 @@
-node_modules/
 .DS_Store
-*.keystore
-*.jks
-keystore.properties
